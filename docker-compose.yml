@@ -1,0 +1,65 @@
+version: '3'
+
+networks:
+  backend:
+
+services:
+
+  # nginx
+  nginx:
+    image: nginx:stable-alpine
+    container_name: symfonyDemo-nginx-server
+    ports:
+      - "8080:80"
+    volumes:
+      - ./app:/var/www/app
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/logs:/var/log/nginx/
+    depends_on:
+      - php74
+      - mysql57
+    networks:
+      - backend
+
+  # mysql
+  mysql57:
+    image: mysql:5.7
+    container_name: symfonyDemo-db
+    restart: unless-stopped
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/conf.d:/etc/mysql/conf.d
+      - ./mysql/logs:/var/log/mysql/
+    ports:
+      - "4307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: pass
+      MYSQL_USER: user
+      MYSQL_USER_PASSWORD: pass
+    networks:
+      - backend
+
+  # adminer
+  adminer:
+    image: adminer
+    container_name: symfonyDemo-adminer
+    restart: unless-stopped
+    ports:
+      - 8000:8080
+    networks:
+      - backend
+
+  # php-7.4
+  php74:
+    build:
+      context: .
+      dockerfile: ./php/build/Dockerfile
+    working_dir: /var/www/app
+    container_name: symfonyDemo-app
+    volumes:
+      - ./app:/var/www/app
+      - ./php/php-ini/7.4/php.ini:/usr/local/etc/php/php.ini
+    ports:
+      - "9000:9000"
+    networks:
+      - backend
